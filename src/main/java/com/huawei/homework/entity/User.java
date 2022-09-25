@@ -2,12 +2,15 @@ package com.huawei.homework.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 
+import javax.validation.constraints.*;
 import java.io.Serializable;
 
 @TableName("t_user")
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
+
     private long id;
+    @Pattern(regexp = "^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+$", message = "邮箱格式错误")
     private String email;
     private String gender;
     private String birth;
