@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>时间戳转换工具</title>
+</head>
+<body>
+<div id="main_left">
+    <div class="kuang" style="margin-bottom: 8px;">
+        <div id="main_content">
+            <div class="nry_bt" align="center">
+                <h1>时间戳转换工具</h1>
+            </div>
+
+            <div class="huisefengexian"></div>
+
+            <table width="720" border="0" cellpadding="0" cellspacing="0" bgcolor="#C5D5C5" align="center">
+                <tr>
+                    <td>
+                        <table width="100%" border="0" cellpadding="8" cellspacing="1">
+                            <tr>
+                                <td bgcolor="#F5F5F5" align="center">现在的Unix时间戳</td>
+                                <td bgcolor="#FFFFFF" align="center" style="font-size:16px;" id="currentunixtime"></td>
+                                <td bgcolor="#FFFFFF" align="center" style="font-size:16px;">
+                                    <input type="button" value="开始" onclick="startTimer();"/>
+                                    <input type="button" value="停止" onclick="stopTimer();"/>
+                                    <input type="button" value="刷新" onclick="currentTime();"/>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <br/><br/>
+
+            <table width="720" border="0" cellpadding="0" cellspacing="0" bgcolor="#C5D5C5" align="center">
+                <tr>
+                    <td>
+                        <table width="100%" border="0" cellpadding="8" cellspacing="1">
+                            <tr>
+                                <td bgcolor="#F5F5F5" align="center" width="140">Unix时间戳(毫秒)</td>
+                                <td bgcolor="#FFFFFF" align="center" style="font-size:16px;">
+                                    <input type="text" id="unix2beijing" size="20"/>
+                                    <input type="button" value="转换" style="width:50px;font-size:14px;"
+                                           onclick="unix2human();"/>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td bgcolor="#F5F5F5" align="center">北京时间：</td>
+                                <td bgcolor="#FFFFFF" align="center" id="unix2beijing_ok"></td>
+                            </tr>
+
+
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+
+            <br/><br/>
+
+
+            <table width="720" border="0" cellpadding="0" cellspacing="0" bgcolor="#C5D5C5" align="center">
+                <tr>
+                    <td>
+                        <table width="100%" border="0" cellpadding="8" cellspacing="1">
+
+
+                            <tr>
+                                <td bgcolor="#F5F5F5" align="center" width="140">北京时间</td>
+                                <td bgcolor="#FFFFFF" align="center" style="font-size:16px;">
+                                    <input type="text" id="beijing2unix_nian" size="4" maxlength="4"/>
+                                    <label for="beijing2unix_nian">年</label>
+                                    <input type="text" id="beijing2unix_yue" size="2" maxlength="2"/>
+                                    <label for="beijing2unix_yue">月</label>
+
+                                    <input type="text" id="beijing2unix_ri" size="2" maxlength="2"/>
+                                    <label for="beijing2unix_ri">日</label>
+
+                                    <input type="text" id="beijing2unix_shi" size="2" maxlength="2"/>
+                                    <label for="beijing2unix_shi">时</label>
+
+                                    <input type="text" id="beijing2unix_fen" size="2" maxlength="2"/>
+                                    <label for="beijing2unix_fen">分</label>
+
+                                    <input type="text" id="beijing2unix_miao" size="2" maxlength="2"/>
+                                    <label for="beijing2unix_miao">秒</label>
+
+                                    <input type="button" value="转换" style="width: 50px;font-size:14px;"
+                                           onclick="human2unix();"/>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <td bgcolor="#F5F5F5" align="center">Unix时间戳(毫秒)</td>
+                                <td bgcolor="#FFFFFF" align="center" id="beijing2unix_ok"></td>
+                            </tr>
+
+
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+
+            <script type="text/javascript">
+                var currentTimeActive = 1;
+                var unixTimer = 0;
+
+                function unix2human() {
+                    var a = new Date(document.getElementById("unix2beijing").value * 1);
+                    beijingTimeValue = a.getFullYear() + "/" + (a.getMonth() + 1) + "/" + a.getDate() + " " + a.getHours() + ":" + a.getMinutes() + ":" + a.getSeconds();
+                    document.getElementById("unix2beijing_ok").innerHTML = beijingTimeValue
+                }
+
+                function human2unix() {
+                    var a = new Date(Date.UTC(document.getElementById("beijing2unix_nian").value, (stripLeadingZeroes(document.getElementById("beijing2unix_yue").value) - 1), stripLeadingZeroes(document.getElementById("beijing2unix_ri").value), stripLeadingZeroes(document.getElementById("beijing2unix_shi").value), stripLeadingZeroes(document.getElementById("beijing2unix_fen").value), stripLeadingZeroes(document.getElementById("beijing2unix_miao").value)));
+                    document.getElementById("beijing2unix_ok").innerHTML = (a.getTime() - 8 * 60 * 60 * 1000)
+                }
+
+                function stripLeadingZeroes(a) {
+                    if ((a.length > 1) && (a.substr(0, 1) === "0")) {
+                        return a.substr(1)
+                    } else {
+                        return a
+                    }
+                }
+
+                function currentTime() {
+                    var a = new Date();
+                    document.getElementById("currentunixtime").innerHTML = Math.round(a.getTime());
+                    if (currentTimeActive) {
+                        unixTimer = setTimeout("currentTime()", 1000)
+                    }
+                }
+
+                function startTimer() {
+                    currentTimeActive = 1;
+                    currentTime()
+                }
+
+                function stopTimer() {
+                    currentTimeActive = 0;
+                    clearTimeout(unixTimer)
+                }
+
+                startTimer();
+            </script>
+
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
