@@ -1,6 +1,7 @@
 package com.huawei.homework.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.huawei.homework.utils.GenderCheck;
 
 import javax.validation.constraints.*;
 import java.io.Serializable;
@@ -12,6 +13,7 @@ public class User implements Serializable {
     private long id;
     @Pattern(regexp = "^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+$", message = "邮箱格式错误")
     private String email;
+    @GenderCheck
     private String gender;
     private String birth;
 
