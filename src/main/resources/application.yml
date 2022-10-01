@@ -7,7 +7,8 @@ spring:
 logging:
   level:
     root: info
-  file: /opt/logs/demo.out
+  file:
+    name: /opt/logs/demo.out
   pattern:
     console: '%d{HH:mm:ss.SSS} %-5level %logger{36} [%line] - %msg%n'
 mybatis:
