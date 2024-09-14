@@ -3,6 +3,9 @@ package com.huawei.homework.service.impl;
 import com.huawei.homework.service.RedisService;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -18,7 +21,8 @@ import static io.netty.util.internal.StringUtil.isNullOrEmpty;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.springframework.util.SerializationUtils.serialize;
 @Service
-public class RedisServiceImpl implements RedisService {
+@Order(0)
+public class RedisServiceImpl implements RedisService, ApplicationListener<ApplicationReadyEvent> {
     private static final Logger LOGGER = getLogger(RedisServiceImpl.class);
 
     private static final String DEFAULT_CHARSET = "UTF-8";
@@ -190,4 +194,8 @@ public class RedisServiceImpl implements RedisService {
         }
     }
 
+    @Override
+    public void onApplicationEvent(ApplicationReadyEvent event) {
+        System.out.println("async初始化redis info");
+    }
 }
