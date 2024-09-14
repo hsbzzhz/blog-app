@@ -1,2 +1,10 @@
-/target/
-.idea
+backend/target/
+backend/.idea/
+
+frontend/node_modules/
+frontend/.idea/
+frontend/dist/
+frontend/static/
+
+
+*.log
