@@ -1,10 +1,12 @@
 backend/target/
 backend/.idea/
 
-frontend/node_modules/
-frontend/.idea/
-frontend/dist/
-frontend/static/
+frontend/.DS_Store
+frontend/.idea
+frontend/node_modules
+frontend/dist
+*.mp4
 
+frontend/package-lock.json
 
 *.log
