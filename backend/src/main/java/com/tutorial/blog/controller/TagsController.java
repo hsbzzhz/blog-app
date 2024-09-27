@@ -3,10 +3,13 @@ package com.tutorial.blog.controller;
 
 import com.tutorial.blog.service.TagService;
 import com.tutorial.blog.vo.Result;
+import com.tutorial.blog.vo.TagVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * @Description:
@@ -23,6 +26,8 @@ public class TagsController {
 
     @GetMapping("/hot")
     public Result listHotTags() {
-        return (Result) tagService.findTagsByArticleId(1L);
+        int limit = 3;
+        List<TagVo> tagVoList = tagService.hot(limit);
+        return Result.success(tagVoList);
     }
 }
