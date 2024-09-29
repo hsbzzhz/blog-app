@@ -1,8 +1,10 @@
-package com.tutorial.blog.service;
+package com.tutorial.blog.service.impl;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tutorial.blog.dao.pojo.SysUser;
+import com.tutorial.blog.service.LoginService;
+import com.tutorial.blog.service.SysUserService;
 import com.tutorial.blog.utils.JWTUtils;
 import com.tutorial.blog.vo.ErrorCode;
 import com.tutorial.blog.vo.Result;
@@ -26,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class LoginServiceImpl implements LoginService {
 
-    private static final String slat = "mszlu!@###";
+    private static final String slat = "hogan123!@###";
 
     @Autowired
     private SysUserService sysUserService;
@@ -63,9 +65,10 @@ public class LoginServiceImpl implements LoginService {
             redisTemplate.opsForValue().set("TOKEN_" + token, objectMapper.writeValueAsString(sysUser), 1, TimeUnit.DAYS);
             return Result.success(token);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace(); //todo change
+            return Result.fail(ErrorCode.ACCOUNT_PWD_NOT_EXIST.getCode(), "fail login");
         }
-        return Result.fail(ErrorCode.ACCOUNT_PWD_NOT_EXIST.getCode(), "fail login");
+
     }
 
     @Override
@@ -81,8 +84,14 @@ public class LoginServiceImpl implements LoginService {
         if (StringUtils.isBlank(userJson)){
             return null;
         }
-        SysUser sysUser = JSON.parseObject(userJson, SysUser.class);
-        return sysUser;
+        try {
+            SysUser sysUser = objectMapper.readValue(userJson, SysUser.class);
+            return sysUser;
+        } catch (IOException e) {
+            e.printStackTrace(); //todo change
+            return null;
+        }
+
     }
 
     @Override
@@ -129,12 +138,16 @@ public class LoginServiceImpl implements LoginService {
         this.sysUserService.save(sysUser);
 
         String token = JWTUtils.createToken(sysUser.getId());
-
-        redisTemplate.opsForValue().set("TOKEN_"+token, JSON.toJSONString(sysUser),1, TimeUnit.DAYS);
-        return Result.success(token);
+        try {
+            redisTemplate.opsForValue().set("TOKEN_"+token, objectMapper.writeValueAsString(sysUser),1, TimeUnit.DAYS);
+            return Result.success(token);
+        } catch (IOException e) {
+            e.printStackTrace(); //todo change
+            return null;
+        }
     }
 
     public static void main(String[] args) {
-        System.out.println(DigestUtils.md5Hex("admin"+slat));
+        System.out.println(DigestUtils.md5Hex("12345"+slat));
     }
 }

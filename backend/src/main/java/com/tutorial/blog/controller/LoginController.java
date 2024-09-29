@@ -5,10 +5,7 @@ import com.tutorial.blog.service.LoginService;
 import com.tutorial.blog.vo.Result;
 import com.tutorial.blog.vo.params.LoginParam;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @Description:
@@ -17,15 +14,20 @@ import org.springframework.web.bind.annotation.RestController;
  */
 
 @RestController
-@RequestMapping("login")
+@RequestMapping
 public class LoginController {
 
     @Autowired
     private LoginService loginService;
 
-    @PostMapping
+    @PostMapping("login")
     public Result login(@RequestBody LoginParam loginParam){
 
         return loginService.login(loginParam);
+    }
+
+    @GetMapping("logout")
+    public Result logout(@RequestHeader("Authorization") String token){
+        return loginService.logout(token);
     }
 }

@@ -17,7 +17,7 @@ import java.util.Map;
  */
 
 public class JWTUtils {
-    private static final String jwtToken = "123456Mszlu!@###$$";
+    private static final String jwtToken = "123456Hogan!@###$$";
 
     public static String createToken(Long userId){
         Map<String,Object> claims = new HashMap<>();
@@ -32,6 +32,9 @@ public class JWTUtils {
     }
 
     public static Map<String, Object> checkToken(String token){
+        /**
+         * 校验token是否用自定义jwtToken加密
+         */
         try {
             Jwt parse = Jwts.parser().setSigningKey(jwtToken).parse(token);
             return (Map<String, Object>) parse.getBody();
