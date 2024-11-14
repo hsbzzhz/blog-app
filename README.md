@@ -4,3 +4,10 @@
   )
 * [springboot 学习目录](https://zhoutianyu.blog.csdn.net/article/details/102955812)
 * [idea配置在不同端口跑多个实例](https://blog.csdn.net/Chen4852010/article/details/123660776)
+
+## 前端运行：
+```shell
+npm install
+npm run build
+npm run dev
+```

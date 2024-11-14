@@ -86,11 +86,10 @@
             <version>3.4.3</version>
         </dependency>
 
-        <!--   postgresql   -->
+        <!--   mysql   -->
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
         <!-- Redis -->
