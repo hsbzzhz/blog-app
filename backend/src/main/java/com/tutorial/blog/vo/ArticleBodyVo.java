@@ -8,4 +8,5 @@ package com.tutorial.blog.vo;
  */
 
 public class ArticleBodyVo {
+    private String content;
 }

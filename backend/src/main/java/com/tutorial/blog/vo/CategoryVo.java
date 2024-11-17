@@ -8,4 +8,9 @@ package com.tutorial.blog.vo;
  */
 
 public class CategoryVo {
+    private Long id;
+
+    private String avatar;
+
+    private String categoryName;
 }
