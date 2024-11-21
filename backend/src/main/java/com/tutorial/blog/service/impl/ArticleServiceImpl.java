@@ -8,6 +8,7 @@ import com.tutorial.blog.dao.pojo.Article;
 import com.tutorial.blog.dao.pojo.SysUser;
 import com.tutorial.blog.service.ArticleService;
 import com.tutorial.blog.service.TagService;
+import com.tutorial.blog.service.ThreadService;
 import com.tutorial.blog.vo.ArticleVo;
 import com.tutorial.blog.vo.TagVo;
 import com.tutorial.blog.vo.params.PageParams;
@@ -31,6 +32,9 @@ public class ArticleServiceImpl implements ArticleService {
 
     @Autowired
     private ArticleMapper articleMapper;
+
+    @Autowired
+    private ThreadService threadService;
 
 //    @Autowired
 //    private SysUserService sysUserService;
@@ -75,6 +79,7 @@ public class ArticleServiceImpl implements ArticleService {
     @Override
     public ArticleVo findArticleById(Long id) {
         Article article = articleMapper.selectById(id);
+        threadService.updateViewCount(articleMapper,article);
         return copy(article);
     }
 }

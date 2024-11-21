@@ -43,7 +43,7 @@ public class Article {
     /**
      * 置顶
      */
-    private int weight = Article_Common;
+    private int weight;
 
 
     /**
