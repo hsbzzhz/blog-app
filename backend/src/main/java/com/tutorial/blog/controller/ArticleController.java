@@ -4,6 +4,7 @@ package com.tutorial.blog.controller;
 import com.tutorial.blog.service.ArticleService;
 import com.tutorial.blog.vo.ArticleVo;
 import com.tutorial.blog.vo.Result;
+import com.tutorial.blog.vo.params.ArticleParam;
 import com.tutorial.blog.vo.params.PageParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -37,5 +38,10 @@ public class ArticleController {
         ArticleVo articleVo = articleService.findArticleById(id);
 
         return Result.success(articleVo);
+    }
+
+    @PostMapping("publish")
+    public Result publish(@RequestBody ArticleParam articleParam){
+        return articleService.publish(articleParam);
     }
 }
