@@ -13,7 +13,7 @@ spring:
       max-request-size: 10MB
   minio:
     access-key: minioadmin      #key就是docker初始化是设置的，密钥相同
-    secret-key: minio@123456
+    secret-key: minioadmin
     url: http://localhost:9000
     bucket-name: blog-app   # 登陆minio创建的文件桶
   jackson:

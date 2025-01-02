@@ -9,23 +9,51 @@ import java.util.List;
 
 public interface ArticleService {
     /**
-     *
+     * 分页查询 文章列表
      * @param pageParams
      * @return
      */
-    List<ArticleVo> listArticlesPage(PageParams pageParams);
+    Result listArticle(PageParams pageParams);
+
 
     /**
-     *
+     * 最热文章
+     * @param limit
+     * @return
+     */
+    Result hotArticle(int limit);
+
+    /**
+     * 最新文章
+     * @param limit
+     * @return
+     */
+    Result newArticles(int limit);
+
+    /**
+     * 文章归档
+     * @return
+     */
+    Result listArchives();
+
+    /**
+     * 查看文章详情
      * @param id
      * @return
      */
-    ArticleVo findArticleById(Long id);
+    Result findArticleById(Long id);
 
     /**
-     *
+     * 文章发布服务
      * @param articleParam
      * @return
      */
     Result publish(ArticleParam articleParam);
+
+    /**
+     * 文章搜索
+     * @param search
+     * @return
+     */
+    Result searchArticle(String search);
 }

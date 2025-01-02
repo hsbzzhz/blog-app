@@ -1,22 +1,18 @@
 package com.tutorial.blog.service.impl;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.tutorial.blog.dao.pojo.*;
+import com.tutorial.blog.service.*;
+import com.tutorial.blog.vo.*;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.tutorial.blog.dao.mapper.ArticleBodyMapper;
 import com.tutorial.blog.dao.mapper.ArticleMapper;
 import com.tutorial.blog.dao.mapper.ArticleTagMapper;
-import com.tutorial.blog.dao.pojo.Article;
-import com.tutorial.blog.dao.pojo.ArticleBody;
-import com.tutorial.blog.dao.pojo.ArticleTag;
-import com.tutorial.blog.dao.pojo.SysUser;
-import com.tutorial.blog.service.ArticleService;
-import com.tutorial.blog.service.TagService;
-import com.tutorial.blog.service.ThreadService;
 import com.tutorial.blog.utils.UserThreadLocal;
-import com.tutorial.blog.vo.ArticleVo;
-import com.tutorial.blog.vo.Result;
-import com.tutorial.blog.vo.TagVo;
 import com.tutorial.blog.vo.params.ArticleParam;
 import com.tutorial.blog.vo.params.PageParams;
 import net.sf.jsqlparser.expression.DateTimeLiteralExpression;
@@ -39,7 +35,7 @@ import java.util.List;
 public class ArticleServiceImpl implements ArticleService {
 
     @Autowired
-    private ArticleMapper articleMapper;
+    private StringRedisTemplate redisTemplate;
 
     @Autowired
     private ThreadService threadService;
@@ -48,53 +44,166 @@ public class ArticleServiceImpl implements ArticleService {
     private ArticleTagMapper articleTagMapper;
 
     @Autowired
+    private ArticleMapper articleMapper;
+
+    @Autowired
     private ArticleBodyMapper articleBodyMapper;
 
-//    @Autowired
-//    private SysUserService sysUserService;
+    @Autowired
+    private CategoryService categoryService;
 
-//    @Autowired
-//    private TagService tagsService;
+    @Autowired
+    private SysUserService sysUserService;
 
-    public ArticleVo copy(Article article){
+    @Autowired
+    private TagService tagsService;
+
+    private ArticleVo copy(Article article, boolean isTag, boolean isAuthor, boolean isBody,boolean isCategory){
         ArticleVo articleVo = new ArticleVo();
-        BeanUtils.copyProperties(article, articleVo);
-//        if (isAuthor) {
-//            SysUser sysUser = sysUserService.findSysUserById(article.getAuthorId());
-//            articleVo.setAuthor(sysUser.getNickname());
-//        }
+        articleVo.setId(String.valueOf(article.getId()));
+        BeanUtils.copyProperties(article,articleVo);
+
         articleVo.setCreateDate(new DateTime(article.getCreateDate()).toString("yyyy-MM-dd HH:mm"));
-//        if (isTags){
-//            List<TagVo> tags = tagsService.findTagsByArticleId(article.getId());
-//            articleVo.setTags(tags);
-//        }
+        //并不是所有的接口 都需要标签 ，作者信息
+        if (isTag){
+            Long articleId = article.getId();
+            articleVo.setTags(tagsService.findTagsByArticleId(articleId));
+        }
+        if (isAuthor){
+            Long authorId = article.getAuthorId();
+            SysUser sysUser = sysUserService.findUserById(authorId);
+            UserVo userVo = new UserVo();
+            userVo.setAvatar(sysUser.getAvatar());
+            userVo.setId(sysUser.getId().toString());
+            userVo.setNickname(sysUser.getNickname());
+            articleVo.setAuthor(userVo);
+        }
+        if (isBody){
+            Long bodyId = article.getBodyId();
+            articleVo.setBody(findArticleBodyById(bodyId));
+        }
+        if (isCategory){
+            Long categoryId = article.getCategoryId();
+            articleVo.setCategory(categoryService.findCategoryById(categoryId));
+        }
         return articleVo;
     }
 
-    private List<ArticleVo> copyList(List<Article> records) {
+    // 此方法重载
+    private List<ArticleVo> copyList(List<Article> records, boolean isTag, boolean isAuthor) {
         List<ArticleVo> articleVoList = new ArrayList<>();
-        for (Article article : records) {
-            ArticleVo articleVo = copy(article);
-            articleVoList.add(articleVo);
+        for (Article record : records) {
+            articleVoList.add(copy(record,isTag,isAuthor,false,false));
         }
         return articleVoList;
     }
 
-
-    @Override
-    public List<ArticleVo> listArticlesPage(PageParams pageParams) {
-        QueryWrapper<Article> queryWrapper = new QueryWrapper<>();
-        Page<Article> page = new Page<>(pageParams.getPage(),pageParams.getPageSize());
-        Page<Article> articlePage = articleMapper.selectPage(page, queryWrapper);
-        List<ArticleVo> articleVoList = copyList(articlePage.getRecords());
+    private List<ArticleVo> copyList(List<Article> records, boolean isTag, boolean isAuthor, boolean isBody,boolean isCategory) {
+        List<ArticleVo> articleVoList = new ArrayList<>();
+        for (Article record : records) {
+            articleVoList.add(copy(record,isTag,isAuthor,isBody,isCategory));
+        }
         return articleVoList;
     }
 
+    private ArticleBodyVo findArticleBodyById(Long bodyId) {
+        ArticleBody articleBody = articleBodyMapper.selectById(bodyId);
+        ArticleBodyVo articleBodyVo = new ArticleBodyVo();
+        articleBodyVo.setContent(articleBody.getContent());
+        return articleBodyVo;
+    }
+
     @Override
-    public ArticleVo findArticleById(Long id) {
-        Article article = articleMapper.selectById(id);
-        threadService.updateViewCount(articleMapper,article);
-        return copy(article);
+    public Result listArticle(PageParams pageParams) {
+        Page<Article> page = new Page<>(pageParams.getPage(),pageParams.getPageSize());
+
+        IPage<Article> articleIPage = articleMapper.listArticle(
+                page,
+                pageParams.getCategoryId(),
+                pageParams.getTagId(),
+                pageParams.getYear(),
+                pageParams.getMonth());
+        List<Article> records = articleIPage.getRecords();
+        for (Article record : records) {
+            String viewCount = (String) redisTemplate.opsForHash().get("view_count", String.valueOf(record.getId()));
+            if (viewCount != null){
+                record.setViewCounts(Integer.parseInt(viewCount));
+            }
+        }
+        return Result.success(copyList(records,true,true));
+    }
+
+    @Override
+    public Result findArticleById(Long articleId) {
+        /**
+         * 1. 根据id查询 文章信息
+         * 2. 根据bodyId和categoryid 去做关联查询
+         */
+        Article article = this.articleMapper.selectById(articleId);
+        ArticleVo articleVo = copy(article, true, true,true,true);
+        //查看完文章了，新增阅读数，有没有问题呢？
+        //查看完文章之后，本应该直接返回数据了，这时候做了一个更新操作，更新时加写锁，阻塞其他的读操作，性能就会比较低
+        // 更新 增加了此次接口的 耗时 如果一旦更新出问题，不能影响 查看文章的操作
+        //线程池  可以把更新操作 扔到线程池中去执行，和主线程就不相关了
+        // todo 实现
+        threadService.updateArticleViewCount(articleMapper,article);
+
+        String viewCount = (String) redisTemplate.opsForHash().get("view_count", String.valueOf(articleId));
+        if (viewCount != null){
+            articleVo.setViewCounts(Integer.parseInt(viewCount));
+        }
+        return Result.success(articleVo);
+    }
+
+    @Override
+    public Result hotArticle(int limit) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Article::getViewCounts);
+        queryWrapper.select(Article::getId,Article::getTitle);
+        queryWrapper.last("limit "+limit);
+        //select id,title from article order by view_counts desc limit 5
+        List<Article> articles = articleMapper.selectList(queryWrapper);
+
+        return Result.success(copyList(articles,false,false));
+    }
+
+    @Override
+    public Result newArticles(int limit) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Article::getCreateDate);
+        queryWrapper.select(Article::getId,Article::getTitle);
+        queryWrapper.last("limit "+limit);
+        //select id,title from article order by create_date desc desc limit 5
+        List<Article> articles = articleMapper.selectList(queryWrapper);
+
+        return Result.success(copyList(articles,false,false));
+    }
+
+    @Override
+    public Result listArchives() {
+        List<Archives> archivesList = articleMapper.listArchives();
+        return Result.success(archivesList);
+    }
+
+    @Override
+    public Result findArticleById(Long articleId) {
+        /**
+         * 1. 根据id查询 文章信息
+         * 2. 根据bodyId和categoryid 去做关联查询
+         */
+        Article article = this.articleMapper.selectById(articleId);
+        ArticleVo articleVo = copy(article, true, true,true,true);
+        //查看完文章了，新增阅读数，有没有问题呢？
+        //查看完文章之后，本应该直接返回数据了，这时候做了一个更新操作，更新时加写锁，阻塞其他的读操作，性能就会比较低
+        // 更新 增加了此次接口的 耗时 如果一旦更新出问题，不能影响 查看文章的操作
+        //线程池  可以把更新操作 扔到线程池中去执行，和主线程就不相关了
+        threadService.updateArticleViewCount(articleMapper,article);
+
+        String viewCount = (String) redisTemplate.opsForHash().get("view_count", String.valueOf(articleId));
+        if (viewCount != null){
+            articleVo.setViewCounts(Integer.parseInt(viewCount));
+        }
+        return Result.success(articleVo);
     }
 
     @Override
@@ -135,5 +244,17 @@ public class ArticleServiceImpl implements ArticleService {
         ArticleVo articleVo = new ArticleVo();
         articleVo.setId(article.getId());
         return Result.success(articleVo);
+    }
+
+    @Override
+    public Result searchArticle(String search) {
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Article::getViewCounts);
+        queryWrapper.select(Article::getId,Article::getTitle);
+        queryWrapper.like(Article::getTitle,search);
+        //select id,title from article order by view_counts desc limit 5
+        List<Article> articles = articleMapper.selectList(queryWrapper);
+
+        return Result.success(copyList(articles,false,false));
     }
 }

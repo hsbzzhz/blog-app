@@ -28,14 +28,14 @@ public class ArticleController {
     @PostMapping
     public Result listArticle(@RequestBody PageParams pageParams) {
         //ArticleVo 页面接收的数据
-        List<ArticleVo> articles = articleService.listArticlesPage(pageParams);
+        List<ArticleVo> articles = articleService.listArticle(pageParams);
 
         return Result.success(articles);
     }
 
     @PostMapping("view/{id}")
     public Result findArticleById(@PathVariable("id") Long id) {
-        ArticleVo articleVo = articleService.findArticleById(id);
+        Result articleVo = articleService.findArticleById(id);
 
         return Result.success(articleVo);
     }

@@ -21,10 +21,7 @@ public class UploadController {
     @PostMapping
     public Result upload(@RequestParam("image") MultipartFile file){
         String fileName = UUID.randomUUID().toString() + "." + StringUtils.substringAfterLast(file.getOriginalFilename(), ".");
-        boolean upload = minIoUtils.uploadToFile(file);
-        if (upload){
-            return Result.success(QiniuUtils.url + fileName);
-        }
-        return Result.fail(20001,"上传失败");
+        minIoUtils.uploadToFile(file);
+        return Result.success("上传成功！");
     }
 }
