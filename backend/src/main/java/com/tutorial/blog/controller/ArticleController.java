@@ -1,15 +1,14 @@
 package com.tutorial.blog.controller;
 
 
+import com.tutorial.blog.common.cache.Cache;
 import com.tutorial.blog.service.ArticleService;
-import com.tutorial.blog.vo.ArticleVo;
 import com.tutorial.blog.vo.Result;
 import com.tutorial.blog.vo.params.ArticleParam;
 import com.tutorial.blog.vo.params.PageParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 /**
  * @Description:
@@ -24,13 +23,22 @@ public class ArticleController {
     @Autowired
     private ArticleService articleService;
 
-    //Result是统一结果返回
+    /**
+     * 首页 文章列表
+     * @param pageParams
+     * @return
+     */
     @PostMapping
     public Result listArticle(@RequestBody PageParams pageParams) {
         //ArticleVo 页面接收的数据
-        List<ArticleVo> articles = articleService.listArticle(pageParams);
+        return articleService.listArticle(pageParams);
+    }
 
-        return Result.success(articles);
+    @PostMapping("hot")
+    @Cache(expire = 5 * 60 * 1000,name = "hot_article")
+    public Result hotArticle(){
+        int limit = 5;
+        return articleService.hotArticle(limit);
     }
 
     @PostMapping("view/{id}")

@@ -3,7 +3,9 @@ package com.tutorial.blog.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.tutorial.blog.dao.pojo.*;
 import com.tutorial.blog.service.*;
 import com.tutorial.blog.vo.*;
@@ -23,7 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @Description:
@@ -137,7 +141,7 @@ public class ArticleServiceImpl implements ArticleService {
     public Result findArticleById(Long articleId) {
         /**
          * 1. 根据id查询 文章信息
-         * 2. 根据bodyId和categoryid 去做关联查询
+         * 2. 根据bodyId和categoryId 去做关联查询
          */
         Article article = this.articleMapper.selectById(articleId);
         ArticleVo articleVo = copy(article, true, true,true,true);
@@ -145,7 +149,6 @@ public class ArticleServiceImpl implements ArticleService {
         //查看完文章之后，本应该直接返回数据了，这时候做了一个更新操作，更新时加写锁，阻塞其他的读操作，性能就会比较低
         // 更新 增加了此次接口的 耗时 如果一旦更新出问题，不能影响 查看文章的操作
         //线程池  可以把更新操作 扔到线程池中去执行，和主线程就不相关了
-        // todo 实现
         threadService.updateArticleViewCount(articleMapper,article);
 
         String viewCount = (String) redisTemplate.opsForHash().get("view_count", String.valueOf(articleId));
@@ -186,64 +189,85 @@ public class ArticleServiceImpl implements ArticleService {
     }
 
     @Override
-    public Result findArticleById(Long articleId) {
-        /**
-         * 1. 根据id查询 文章信息
-         * 2. 根据bodyId和categoryid 去做关联查询
-         */
-        Article article = this.articleMapper.selectById(articleId);
-        ArticleVo articleVo = copy(article, true, true,true,true);
-        //查看完文章了，新增阅读数，有没有问题呢？
-        //查看完文章之后，本应该直接返回数据了，这时候做了一个更新操作，更新时加写锁，阻塞其他的读操作，性能就会比较低
-        // 更新 增加了此次接口的 耗时 如果一旦更新出问题，不能影响 查看文章的操作
-        //线程池  可以把更新操作 扔到线程池中去执行，和主线程就不相关了
-        threadService.updateArticleViewCount(articleMapper,article);
-
-        String viewCount = (String) redisTemplate.opsForHash().get("view_count", String.valueOf(articleId));
-        if (viewCount != null){
-            articleVo.setViewCounts(Integer.parseInt(viewCount));
-        }
-        return Result.success(articleVo);
-    }
-
-    @Override
     @Transactional
     public Result publish(ArticleParam articleParam) {
+        //此接口 要加入到登录拦截当中
         SysUser sysUser = UserThreadLocal.get();
-
+        /**
+         * 1. 发布文章 目的 构建Article对象
+         * 2. 作者id  当前的登录用户
+         * 3. 标签  要将标签加入到 关联列表当中
+         * 4. body 内容存储 article bodyId
+         */
         Article article = new Article();
-        article.setAuthorId(sysUser.getId());
-        article.setCategoryId(articleParam.getCategory().getId());
-        article.setCreateDate(System.currentTimeMillis());
-        article.setCommentCounts(0);
-        article.setSummary(articleParam.getSummary());
-        article.setTitle(articleParam.getTitle());
-        article.setViewCounts(0);
-        article.setWeight(Article.Article_Common);
-        article.setBodyId(-1L);
-        this.articleMapper.insert(article);
-
-        //tags
+        boolean isEdit = false;
+        if (articleParam.getId() != null){
+            article = new Article();
+            article.setId(articleParam.getId());
+            article.setTitle(articleParam.getTitle());
+            article.setSummary(articleParam.getSummary());
+            article.setCategoryId(articleParam.getCategory().getId());
+            articleMapper.updateById(article);
+            isEdit = true;
+        }else{
+            article = new Article();
+            article.setAuthorId(sysUser.getId());
+            article.setWeight(Article.Article_Common);
+            article.setViewCounts(0);
+            article.setTitle(articleParam.getTitle());
+            article.setSummary(articleParam.getSummary());
+            article.setCommentCounts(0);
+            article.setCreateDate(System.currentTimeMillis());
+            article.setCategoryId(articleParam.getCategory().getId());
+            //插入之后 会生成一个文章id
+            this.articleMapper.insert(article);
+        }
+        //tag
         List<TagVo> tags = articleParam.getTags();
-        if (tags != null) {
+        if (tags != null){
             for (TagVo tag : tags) {
+                Long articleId = article.getId();
+                if (isEdit){
+                    //先删除
+                    LambdaQueryWrapper<ArticleTag> queryWrapper = Wrappers.lambdaQuery();
+                    queryWrapper.eq(ArticleTag::getArticleId,articleId);
+                    articleTagMapper.delete(queryWrapper);
+                }
                 ArticleTag articleTag = new ArticleTag();
-                articleTag.setArticleId(article.getId());
-                articleTag.setTagId(tag.getId());
+                articleTag.setTagId(Long.parseLong(tag.getId()));
+                articleTag.setArticleId(articleId);
                 articleTagMapper.insert(articleTag);
             }
         }
-        ArticleBody articleBody = new ArticleBody();
-        articleBody.setContent(articleParam.getBody().getContent());
-        articleBody.setContentHtml(articleParam.getBody().getContentHtml());
-        articleBody.setArticleId(article.getId());
-        articleBodyMapper.insert(articleBody);
+        //body
+        if (isEdit){
+            ArticleBody articleBody = new ArticleBody();
+            articleBody.setArticleId(article.getId());
+            articleBody.setContent(articleParam.getBody().getContent());
+            articleBody.setContentHtml(articleParam.getBody().getContentHtml());
+            LambdaUpdateWrapper<ArticleBody> updateWrapper = Wrappers.lambdaUpdate();
+            updateWrapper.eq(ArticleBody::getArticleId,article.getId());
+            articleBodyMapper.update(articleBody, updateWrapper);
+        }else {
+            ArticleBody articleBody = new ArticleBody();
+            articleBody.setArticleId(article.getId());
+            articleBody.setContent(articleParam.getBody().getContent());
+            articleBody.setContentHtml(articleParam.getBody().getContentHtml());
+            articleBodyMapper.insert(articleBody);
 
-        article.setBodyId(articleBody.getId());
-        articleMapper.updateById(article);
-        ArticleVo articleVo = new ArticleVo();
-        articleVo.setId(article.getId());
-        return Result.success(articleVo);
+            article.setBodyId(articleBody.getId());
+            articleMapper.updateById(article);
+        }
+        Map<String,String> map = new HashMap<>();
+        map.put("id",article.getId().toString());
+
+        if (isEdit){
+            //发送一条消息给rocketmq 当前文章更新了，更新一下缓存吧
+            ArticleMessage articleMessage = new ArticleMessage();
+            articleMessage.setArticleId(article.getId());
+//            rocketMQTemplate.convertAndSend("blog-update-article",articleMessage);
+        }
+        return Result.success(map);
     }
 
     @Override
