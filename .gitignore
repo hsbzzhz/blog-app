@@ -1,12 +1,14 @@
-backend/target/
-backend/.idea/
+blog-app/.idea/
+blog-app/.vscode/
+blog-app/*/target/
+blog-app/*/.idea/
 
 frontend/.DS_Store
 frontend/.idea
 frontend/node_modules
 frontend/dist
-*.mp4
+
 
 frontend/package-lock.json
-
+*.mp4
 *.log

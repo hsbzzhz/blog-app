@@ -1,0 +1,20 @@
+server:
+  port: 8889
+spring:
+  application:
+    name: tutorial_admin_blog
+  servlet:
+    multipart:
+      max-request-size: 20MB  # 上传文件总的最大值
+      max-file-size: 2MB  # 单个文件的最大值
+
+#数据库的配置
+# datasource
+mybatis-plus:
+  configuration:
+    # 启用 MyBatis Plus 的日志输出，以便查看 SQL 语句的生成情况
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      table-prefix: ms_
+
