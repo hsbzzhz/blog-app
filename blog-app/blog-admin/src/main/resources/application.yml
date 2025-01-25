@@ -9,9 +9,9 @@ spring:
       max-file-size: 2MB  # 单个文件的最大值
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://47.102.135.10:3306/blog
+    url: jdbc:mysql://localhost:3306/blog
     username: blog
-    password: apjhZzaS4T7bPP5N
+    password: 123456
 
 #数据库的配置
 # datasource
